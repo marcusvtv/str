@@ -53,5 +53,7 @@ vetor[indice] = 55;
 
 ### Confiabilidade e tolerância de faltas
 -> Avaliação e confinamento de danos:
-    Decomposição modular e ações atômicas.
+    Ações atômicas.
       Uma thread ou processo sendo executado de forma isolada (ação atômica) não se comunica com outra thread ou processo enquanto estiver nesse escopo.
+    Decomposição modular 
+      Possibilitar o sistema em componentes menores, em que cada componente pode representar um ou mais módulos.
