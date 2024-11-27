@@ -51,3 +51,7 @@ if ((indice <0) || (indice>50)){ // testa se o retorno da função f1 está na e
 }
 vetor[indice] = 55;
 
+### Confiabilidade e tolerância de faltas
+-> Avaliação e confinamento de danos:
+    Decomposição modular e ações atômicas.
+      Uma thread ou processo sendo executado de forma isolada (ação atômica) não se comunica com outra thread ou processo enquanto estiver nesse escopo.
