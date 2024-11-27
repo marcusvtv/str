@@ -1,0 +1,142 @@
+With Ada.Text_IO; Use Ada.Text_IO;
+With Ada.Integer_Text_IO, Ada.Text_IO, Ada.Calendar;
+Use Ada.Integer_Text_IO, Ada.Text_IO, Ada.Calendar;
+
+procedure NVersao is
+   canal : array(1..6) of integer := (-1, -1, -1, -1, -1, -1);
+   
+   chanA_Driver: Integer := 1;
+   chanB_Driver: Integer := 2;
+   chanC_Driver: Integer := 3;
+   chanDriver_A: Integer := 4;
+   chanDriver_B: Integer := 5;
+   chanDriver_C: Integer := 6;
+   
+   t: Integer;
+   
+   function send_async(mensagem: in integer; indice: in integer) return integer is  -- Mensagem e indice são variáveis de entrada da função 
+   begin
+      canal(indice) := mensagem;
+      return 0;
+   end send_async;
+
+   function receive(mensagem : out integer; indice : in integer) return Integer is    -- Mensagem é variável de saída da função e indice é variável de entrada   
+   begin
+      while canal(indice) = -1 loop
+            t := 1;
+      end loop;
+      mensagem := canal(indice);
+      return 0;
+   end receive;
+   
+   function compara(voto1: in integer; voto2: in integer; voto3: in integer; versao_erro: out integer) return integer is
+   begin
+      if (voto1 = voto2) and (voto2 = voto3) then 
+         versao_erro := -1;
+         return voto1;
+      elsif (voto1 /= voto2) and (voto2 = voto3) then
+         versao_erro := 1;
+         return voto2;
+      elsif (voto1 = voto3) and (voto1 /= voto2) then
+         versao_erro := 2;
+         return voto1;
+      elsif (voto1 = voto2) and (voto2 /= voto3) then
+         versao_erro := 3;
+         return voto1;
+      else
+         -- Lide com outros casos, se necessário
+         return 0; -- Retorne um valor padrão
+      end if;
+   end compara;
+
+   task TA;
+   task TB;
+   task TC;
+   task TD;
+ task body TA is
+      Valor : Integer := 10;
+      Status : Integer;
+   begin
+      t:=send_async(Valor, chanA_Driver);
+      t:=receive(Status, chanDriver_A);
+
+      if Status = 0 then
+         Put_Line("TA Enviou Voto Errado.");
+      else
+         Put_Line("TA Enviou Voto Certo.");
+      end if;
+   end TA;
+
+   task body TB is
+      Valor : Integer := 9;
+      Status : Integer;
+   begin
+      t:=send_async(Valor, chanB_Driver);
+      t:=receive(Status, chanDriver_B);
+
+      if Status = 0 then
+         Put_Line("TB Enviou Voto Errado.");
+      else
+         Put_Line("TB Enviou Voto Certo.");
+      end if;
+   end TB;
+
+   task body TC is
+      Valor : Integer := 10;
+      Status : Integer;
+   begin
+      t:=send_async(Valor, chanC_Driver);
+      t:=receive(Status, chanDriver_C);
+
+      if Status = 0 then
+         Put_Line("TC Enviou Voto Errado.");
+      else
+         Put_Line("TC Enviou Voto Certo.");
+      end if;
+   end TC;
+
+   task body TD is
+      Votos : array(1..3) of Integer;
+      Voto : Integer;
+      Versao_Erro : Integer;
+      Major : Integer;
+      Errado : constant Integer := 0;
+      Certo : constant Integer := 1;
+   begin
+      t :=receive(Voto, chanA_Driver);
+      Votos(1) := Voto;
+      t :=receive(Voto, chanB_Driver);
+      Votos(2) := Voto;
+      t :=receive(Voto, chanC_Driver);
+      Votos(3) := Voto;
+
+      Major:=compara(Votos(1), Votos(2), Votos(3), Versao_Erro);
+
+      for I in 1..3 loop
+         if I = Versao_Erro then
+            t:=send_async(Errado, I + 3);
+         else
+            t:=send_async(Certo, I + 3);
+         end if;
+      end loop;
+
+      if Versao_Erro /= -1 then
+         Put("O voto ");
+         Put(Versao_Erro);
+         Put(" está errado no valor de ");
+         Put(Votos(Versao_Erro));
+         New_Line;
+         Put("O voto no valor de ");
+         Put(Major);
+         Put(" está certo.");
+         New_Line;
+      else
+         Put_Line("Todos tiveram o mesmo voto = " & Integer'Image(Major));
+      end if;
+   end TD;
+
+begin
+   -- Aguarda as tarefas terminarem
+   New_Line;
+   Put_Line("Todas as tarefas terminaram.");
+end NVersao;
