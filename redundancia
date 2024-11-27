@@ -1,0 +1,622 @@
+/* CÓDIGO FORNECIDO PELO PROFESSOR
+Algoritmo inicial de TA:*\
+
+do
+{
+	y = fa();
+	printf("TA executando FA\n");
+	send(&y, AB);
+	recieve(&valor, CA);
+} while(valor == 100);
+if(valor == -5)
+{
+	valor = 100;
+	while(valor == 100)
+	{
+		y = fa(); printf("TA executando FA\n");
+		send_async(&valor, AC);
+		recieve(&valor, CA);
+	}
+}
+
+Algoritmo inicial de TB:
+recieve(&valor, AB);
+while(valor == 1)
+{
+	y = fb();
+	printf("TB executando FB\n");
+	send_async(&y, BC);
+	recieve(&valor, AB);
+}
+
+Algoritmo inicial de TC:
+recieve(&valor, BC);
+while(valor == 50)
+{
+	y = fc();
+	printf("TC executando FC\n");
+	send_async(&y, CA);
+	recieve(&valor, BC);
+}
+FIM DO CÓDIGO*/
+
+// CÓDIGO FORNECIDO PELO CHATGPT
+#define AB 0
+#define BA 1
+#define BC 2
+#define CB 3
+#define CA 4
+#define AC 5
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <pthread.h>
+#include <unistd.h>
+
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
+
+int fa_result, fb_result, fc_result;
+int ta_failed = 0, tb_failed = 0, tc_failed = 0;
+
+void send_mess_async(int *buf, int c) {
+    pthread_mutex_lock(&mutex);
+    *buf = c;
+    pthread_cond_signal(&cond);
+    pthread_mutex_unlock(&mutex);
+}
+
+void receive_mess(int *buf, int *c) {
+    pthread_mutex_lock(&mutex);
+    while (*buf == -1) {
+        pthread_cond_wait(&cond, &mutex);
+    }
+    *c = *buf;
+    *buf = -1;
+    pthread_cond_signal(&cond);
+    pthread_mutex_unlock(&mutex);
+}
+
+void fa() {
+    // Implementação de fa()
+    fa_result = 5 + rand() % 6;
+    send_mess_async(&fb_result, fa_result);
+}
+
+void fb() {
+    // Implementação de fb()
+    fb_result = 50 + rand() % 51;
+    send_mess_async(&fc_result, fb_result);
+}
+
+void fc() {
+    // Implementação de fc()
+    fc_result = 1 + rand() % 10;
+    send_mess_async(&fa_result, fc_result);
+}
+
+void *thread_TA(void *arg) {
+    while (1) {
+        if (!ta_failed) {
+            fa();
+            int tb_message, tc_message;
+            receive_mess(&tb_message, &tb_message);
+            if (tb_message == -5) {
+                ta_failed = 1;
+                send_mess_async(&tc_message, -5);
+            } else if (tb_message < 50 || tb_message > 100) {
+                // Tratar erro, por exemplo, reiniciar a thread ou logar a falha
+            } else {
+                fb();
+                send_mess_async(&tc_message, fb_result);
+            }
+
+            receive_mess(&tb_message, &tb_message);
+            if (tb_message == -5) {
+                ta_failed = 1;
+                send_mess_async(&tc_message, -5);
+            } else if (tb_message < 1 || tb_message > 10) {
+                // Tratar erro, por exemplo, reiniciar a thread ou logar a falha
+            } else {
+                fc();
+                send_mess_async(&tc_message, fc_result);
+            }
+        } else {
+            sleep(1);
+        }
+    }
+}
+
+void *thread_TB(void *arg) {
+    while (1) {
+        if (!tb_failed) {
+            int tb_message, tc_message;
+            receive_mess(&tc_message, &tc_message);
+            if (tc_message == -5) {
+                tb_failed = 1;
+                send_mess_async(&tb_message, -5);
+            } else if (tc_message < 1 || tc_message > 10) {
+                // Tratar erro, por exemplo, reiniciar a thread ou logar a falha
+            } else {
+                fa();
+                send_mess_async(&tb_message, fa_result);
+            }
+
+            receive_mess(&tc_message, &tc_message);
+            if (tc_message == -5) {
+                tb_failed = 1;
+                send_mess_async(&tb_message, -5);
+            } else if (tc_message < 50 || tc_message > 100) {
+                // Tratar erro, por exemplo, reiniciar a thread ou logar a falha
+            } else {
+                fc();
+                send_mess_async(&tb_message, fc_result);
+            }
+        } else {
+            sleep(1);
+        }
+    }
+}
+
+void *thread_TC(void *arg) {
+    while (1) {
+        if (!tc_failed) {
+            int tb_message, tc_message;
+            receive_mess(&tb_message, &tb_message);
+            if (tb_message == -5) {
+                tc_failed = 1;
+                send_mess_async(&tc_message, -5);
+            } else if (tb_message < 50 || tb_message > 100) {
+                // Tratar erro, por exemplo, reiniciar a thread ou logar a falha
+            } else {
+                fb();
+                send_mess_async(&tc_message, fb_result);
+            }
+
+            receive_mess(&tb_message, &tb_message);
+            if (tb_message == -5) {
+                tc_failed = 1;
+                send_mess_async(&tc_message, -5);
+            } else if (tb_message < 1 || tb_message > 10) {
+                // Tratar erro, por exemplo, reiniciar a thread ou logar a falha
+            } else {
+                fa();
+                send_mess_async(&tc_message, fa_result);
+            }
+        } else {
+            sleep(1);
+        }
+    }
+}
+
+int main() {
+    pthread_t ta, tb, tc;
+
+    pthread_create(&ta, NULL, thread_TA, NULL);
+    pthread_create(&tb, NULL, thread_TB, NULL);
+    pthread_create(&tc, NULL, thread_TC, NULL);
+
+    pthread_join(ta, NULL);
+    pthread_join(tb, NULL);
+    pthread_join(tc, NULL);
+
+    return 0;
+}
+//FIM DO CÓDIGO
+
+//========================================================================
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <stddef.h>    
+#include <pthread.h>
+#include <time.h>
+#include <errno.h>
+
+#define AB 0
+#define BA 1
+#define CB 2
+#define BC 3
+#define AC 4
+#define CA 5
+
+int canal[6]={-1,-1,-1,-1,-1,-1};
+
+void send_async(int *b, int c)
+{
+     canal[c] = *b;
+     return;
+}
+
+void receive(int *b, int c)
+{
+     while(canal[c] == -1){}
+
+     *b = canal[c];
+     canal[c] = -1;
+
+     return;
+}    
+
+int fa(){
+    return 1; //entre 5 e 10
+}
+
+int fb(){
+    return 50; //entre 50 e 100
+}
+
+int fc(){
+    return 100; //entre 1 e 10
+}
+
+void *ta(void *threadno)
+{
+    int y;
+    int valor;
+    do{
+        y=fa();
+        printf("TA executando FA\n");
+        send_async(&y,AB);
+        receive(&valor,CA);
+        
+    }while(valor==100);
+    if(valor==-5){
+        valor=100;
+        while(valor==100){
+        y=fa();
+        printf("TA executando FA\n");
+        send_async(&y,AC);
+        receive(&valor,CA);
+    }
+    }
+
+}
+
+void *tb(void *threadno)
+{   
+    int y;
+    int valor;
+    receive(&valor,AB);
+    while(valor==1){
+        y=fb();
+        printf("TB executando FB\n");
+        send_async(&y,BC);
+        receive(&valor,AB);
+    }
+    return NULL;
+
+}
+
+
+void *tc(void *threadno)
+{
+    int y;
+    int valor;
+    receive(&valor,BC);
+    while(valor==50){
+        y=fc();
+        printf("TC executando FC\n");
+        send_async(&y,CA);
+        receive(&valor,BC);
+    }
+    return NULL;
+}
+
+
+
+int main()
+{
+    pthread_t TA;
+    pthread_t TB;
+    pthread_t TC;
+
+
+    pthread_create(&TA, NULL, ta, NULL);
+    pthread_create(&TB, NULL, tb, NULL);
+    pthread_create(&TC, NULL, tc, NULL);
+
+
+    pthread_join(TA, NULL);
+    pthread_join(TB, NULL);
+    pthread_join(TC, NULL);
+
+    return 0;
+}
+
+//======================================
+//CÓDIGO FINAL
+#include <stdio.h>
+#include <stdlib.h>
+#include <stddef.h>    
+#include <pthread.h>
+#include <time.h>
+#include <errno.h>
+#include <unistd.h>
+
+#define AB 0
+#define BA 1
+#define CB 2
+#define BC 3
+#define AC 4
+#define CA 5
+
+int canal[6]={-1,-1,-1,-1,-1,-1};
+
+void send_async(int *b, int c)
+{
+     canal[c] = *b;
+     return;
+}
+
+void receive(int *b, int c)
+{
+     while(canal[c] == -1){}
+
+     *b = canal[c];
+     canal[c] = -1;
+
+     return;
+}    
+
+int fa()
+{
+    return 5 + rand()%6; //acerto //entre 5 e 10
+    //return 5 + rand()%9; //erro
+}
+
+int fb()
+{
+    return 50 + rand()%51; //acerto //entre 50 e 100
+    //return 50 + rand()%71; //erro
+}
+
+int fc()
+{
+    return 1 + rand()%10; //acerto//entre 1 e 10
+    //return 1 + rand()%15; //erro
+}
+
+void *ta(void *threadno)
+{
+    int y;
+    int valor;
+
+
+    
+    //faça isso enquanto tc enviar valor correto
+    do
+    {
+        y=fa();
+        printf("TA executando FA (entre 5 e 10); valor: %d\n", y);
+        send_async(&y,AB); //envia fa para tb
+        sleep(2);
+        receive(&valor,CA); //recebe fc de tc
+        
+    }while(valor>0&&valor<11);
+    
+    //se tc enviou valor errado de fc para ta...
+    if((valor<1||valor>10) && valor!=-5) 
+    {
+        y=-5;
+        printf("TC apresentou falha!\n");
+        send_async(&y,AB); //envia código de erro para tb
+        sleep(2);
+        receive(&valor,BA);
+        while(valor>49&&valor<101) //verifica se tb está correto
+        {
+            y=fa();
+            printf("TA executando FA (entre 5 e 10); valor: %d\n", y);
+            send_async(&y,AB); //envia fa para tb
+            sleep(2);
+            y=fc();
+            printf("TA executando FC (entre 1 e 10); valor: %d\n", y);
+            sleep(2);
+            receive(&valor,BA); //recebe fb de tb
+        }
+        printf("TB apresentou falha!\n");
+        while (1)
+        {
+            y=fa();
+            printf("TA executando FA (entre 5 e 10); valor: %d\n", y);
+            y=fb();
+            printf("TA executando FB (entre 50 e 100); valor: %d\n", y);
+            y=fc();
+            printf("TA executando FC (entre 1 e 10); valor: %d\n", y);
+            sleep(2);
+        }
+    }
+    
+    //se tb enviou valor errado de fb para tc...
+    if(valor==-5) 
+    {
+        valor = 5;
+        while((valor>0&&valor<11)) //verifica se fc está correto
+        {
+            y=fa();
+            printf("TA executando FA (entre 5 e 10); valor: %d\n", y);
+            send_async(&y,AC); //envia fa para tc
+            sleep(2);
+            receive(&valor,CA); //recebe fc de tc
+        }
+        printf("TC apresentou falha!\n");
+        while (1) //se tc enviou valor errado de fc para ta...
+        {
+            y=fa();
+            printf("TA executando FA (entre 5 e 10); valor: %d\n", y);
+            y=fb();
+            printf("TA executando FB (entre 50 e 100); valor: %d\n", y);
+            y=fc();
+            printf("TA executando FC (entre 1 e 10); valor: %d\n", y);
+            sleep(2);
+        }
+    }
+}
+
+
+void *tb(void *threadno)
+{   
+    int y;
+    int valor;
+    receive(&valor,AB);
+    
+    //enquanto ta enviar valor correto...
+    while(valor>4&&valor<11)
+    {
+        y=fb();
+        printf("TB executando FB (entre 50 e 100); valor: %d\n", y);
+        send_async(&y,BC);
+        sleep(2);
+        receive(&valor,AB);
+    }
+    
+    //se ta enviou valor errado de fa para tb...
+    if((valor<5||valor>10) && valor!=-5) 
+    {
+        y=-5;
+        printf("TA apresentou falha!\n");
+        send_async(&y,BC); //envia código de erro para tc
+        sleep(2);
+        receive(&valor,CB);
+        while((valor>0&&valor<11) && valor!=-5) //verifica se tc está correto
+        {
+            y=fb();
+            printf("TB executando FB (entre 50 e 100); valor: %d\n", y);
+            send_async(&y,BC);
+            sleep(2);
+            y=fa();
+            printf("TB executando FA (entre 5 e 10); valor: %d\n", y);
+            sleep(2);
+            receive(&valor,CB); //recebe fa ou fc de tc
+        }
+        printf("TC apresentou falha!\n");
+        while (1)
+        {
+            y=fa();
+            printf("TB executando FA (entre 5 e 10); valor: %d\n", y);
+            y=fb();
+            printf("TB executando FB (entre 50 e 100); valor: %d\n", y);
+            y=fc();
+            printf("TB executando FC (entre 1 e 10); valor: %d\n", y);
+            sleep(2);
+        }
+    }
+    
+    //se tc enviou valor errado de fc para ta...
+    if(valor==-5) 
+    {
+        valor = 5; 
+        while((valor>4&&valor<11)) //verifica se fa está correto
+        {
+            y=fb();
+            printf("TB executando FB (entre 50 e 100); valor: %d\n", y);
+            send_async(&y,BA); //envia fb para ta
+            sleep(2);
+            receive(&valor,AB); //recebe fa de ta
+        }
+        printf("TA apresentou falha!\n");
+        while (1) //se ta enviou valor errado de fa para tb...
+        {
+            y=fa();
+            printf("TB executando FA (entre 5 e 10); valor: %d\n", y);
+            y=fb();
+            printf("TB executando FB (entre 50 e 100); valor: %d\n", y);
+            y=fc();
+            printf("TB executando FC (entre 1 e 10); valor: %d\n", y);
+            sleep(2);
+        }
+    }
+}
+
+
+void *tc(void *threadno)
+{
+    int y;
+    int valor;
+    receive(&valor,BC);
+    
+    //enquanto tb enviar valor correto...
+    while(valor>49&&valor<101)
+    {
+        y=fc();
+        printf("TC executando FC (entre 1 e 10); valor: %d\n", y);
+        send_async(&y,CA);
+        sleep(2);
+        receive(&valor,BC);
+    }
+    
+    //se tb enviou valor errado de fb para tc...
+    if((valor<50||valor>100) && valor!=-5) 
+    {
+        y=-5;
+        printf("TB apresentou falha!\n");
+        send_async(&y,CA); //envia código de erro para ta
+        receive(&valor,AC);
+        sleep(2);
+        while(valor>4&&valor<11 && valor!=-5) //verifica se ta está correto
+        {
+            
+            y=fc();
+            printf("TC executando FC (entre 1 e 10); valor: %d\n", y);
+            send_async(&y,CA); //envia fc para ta
+            sleep(2);
+            y=fb();
+            printf("TC executando FB (entre 50 e 100); valor: %d\n", y);
+            sleep(2);
+            receive(&valor,AC); //recebe fa ou fb de ta
+        }
+        printf("TA apresentou falha!\n");
+        while (1) // se ta estiver errado...
+        {
+            y=fa();
+            printf("TC executando FA (entre 5 e 10); valor: %d\n", y);
+            y=fb();
+            printf("TC executando FB (entre 50 e 100); valor: %d\n", y);
+            y=fc();
+            printf("TC executando FC (entre 1 e 10); valor: %d\n", y);
+            sleep(2);
+        }
+    }
+    
+    //se ta enviou valor errado de fa para tb...
+    if(valor==-5) 
+    {
+        valor = 50;
+        while(valor>49&&valor<101) //verifica se fb está correto
+        {
+            y=fc();
+            printf("TC executando FC (entre 1 e 10); valor: %d\n", y);
+            send_async(&y,CB); //envia fc para tb
+            sleep(2);
+            receive(&valor,BC); //recebe fb de tb
+        }
+        printf("TB apresentou falha!\n");
+        while (1) //se tb enviou valor errado de fb para tc...
+        {
+            y=fa();
+            printf("TC executando FA (entre 5 e 10); valor: %d\n", y);
+            y=fb();
+            printf("TC executando FB (entre 50 e 100); valor: %d\n", y);
+            y=fc();
+            printf("TC executando FC (entre 1 e 10); valor: %d\n", y);
+            sleep(2);
+        }
+    }
+}
+
+int main()
+{
+    pthread_t TA;
+    pthread_t TB;
+    pthread_t TC;
+
+    pthread_create(&TA, NULL, ta, NULL);
+    pthread_create(&TB, NULL, tb, NULL);
+    pthread_create(&TC, NULL, tc, NULL);
+
+    pthread_join(TA, NULL);
+    pthread_join(TB, NULL);
+    pthread_join(TC, NULL);
+
+    return 0;
+}
