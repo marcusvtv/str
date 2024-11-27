@@ -1,0 +1,91 @@
+    /******************************************************************************
+
+Welcome to GDB Online.
+GDB online is an online compiler and debugger tool for C, C++, Python, Java, PHP, Ruby, Perl,
+C#, OCaml, VB, Swift, Pascal, Fortran, Haskell, Objective-C, Assembly, HTML, CSS, JS, SQLite, Prolog.
+Code, Compile, Run and Debug online from anywhere in world.
+
+*******************************************************************************/
+#include <iostream>
+#include <pthread.h>
+#include <time.h>
+#include <errno.h>
+#include <stdio.h>
+
+
+char listachar[30];
+int indice = 0;
+int flag1 = 1;
+int flag2 = 0;
+int flag3 = 0;
+int a = 97;
+int turn = 0;
+
+void *thread_code_a(void *threadno)
+{
+    while (indice <=23){
+        while(flag1 == 0);
+        listachar[indice] = char(a);
+        a++;
+        indice++;
+        flag2 = 1;
+        flag1 = 0;
+    }
+return NULL;
+}
+
+void *thread_code_b(void *threadno)
+{
+    while (indice <=24){
+        while(flag2 == 0);
+        listachar[indice] = char(a);
+        a++;
+        indice++;
+        flag3 = 1;
+        flag2 = 0;
+    }
+return NULL;
+}
+
+void *thread_code_c(void *threadno)
+{
+    while (indice <=25){
+        while(flag3 == 0);
+        listachar[indice] = char(a);
+        a++;
+        indice++;
+        flag1 = 1;
+        flag3 = 0;
+    }
+    printf("encerrou thread c! \n");
+    for (indice = 0;indice<=25; indice++){
+        if (indice < 25) {
+            printf("%c, ", listachar[indice]);    
+        }
+        else{
+            printf("%c.", listachar[indice]);    
+        }
+        
+        
+    }
+    
+return NULL;
+}       
+
+
+int main(void)
+{
+    pthread_t TA;
+    pthread_t TB;
+    pthread_t TC;
+    
+    pthread_create(&TA, NULL, thread_code_a, NULL);
+    pthread_create(&TB, NULL, thread_code_b, NULL);
+    pthread_create(&TC, NULL, thread_code_c, NULL);
+    
+    pthread_join(TA,NULL);
+    pthread_join(TB,NULL);
+    pthread_join(TC,NULL);
+    return 0;
+    
+}           
