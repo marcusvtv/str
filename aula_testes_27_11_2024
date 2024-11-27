@@ -1,0 +1,53 @@
+// Envio sincrono temporizado, recebimento sincrono temporizado
+
+
+// teste de temporização
+
+void T1(){
+  int x = 20;
+  int status;
+
+  status = send_sync_timed(&x,0,5);
+  if (status == 1)
+    printf("Erro no envio");
+}
+
+void T2(){
+  int y = 20;
+  int status;
+
+  status = receive_timed(&y,0,5);
+  if (status == 1)
+    printf("Recebimento não realizado");
+}
+
+// Teste reverso;
+
+// Teste de codificação;
+ CRC - Cyclic redundancy check
+
+// Teste de razoabilidade;
+
+T1() <-------> Sensor
+               0 ~ 255 # leitura do sensor
+              50 ~ 150 # valores aceitáveis
+X = read_ADC();
+if((x<50) || x>150)){  // Ajuste se fora do range...
+  x = 100;
+  printf("Valor ajustado");
+} 
+
+// Teste Estrutural
+
+int indice = 0;
+int vetor[50];
+
+void main(){
+
+indice = f1();
+if ((indice <0) || (indice>50)){ // testa se o retorno da função f1 está na estrutura aceitável do vetor. Ajusta o valor se encontrar estado erroneo.
+  printf("indice errado");
+  indice = 25;
+}
+vetor[indice] = 55;
+
