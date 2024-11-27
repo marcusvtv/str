@@ -1,0 +1,172 @@
+/******************************************************************************
+
+                            Online C Compiler.
+                Code, Compile, Run and Debug C program online.
+Write your code in this editor and press "Run" button to compile and execute it.
+
+*******************************************************************************/
+
+#include <pthread.h>
+#include <time.h>
+#include <errno.h>
+#include <stdio.h>
+
+int canal[6] = {-1, -1, -1, -1, -1, -1};
+
+void send_async(int *Buf, int c)
+{
+    canal[c] = *Buf;
+    return;
+}
+
+void receive(int *Buf, int c)
+{
+    while (canal[c] == -1)
+        ;
+    *Buf = canal[c];
+    canal[c] = -1;
+    return;
+}
+
+void *ta(void *Threadno)
+{
+    int valor = 10;
+    int status;
+    send_async(&valor, 0);
+    receive(&status, 3);
+
+    if (status == 0)
+    {
+        printf("TA Enviou Voto Errado.\n");
+    }
+    else
+    {
+        printf("TA Enviou Voto Certo.\n");
+    }
+    return NULL;
+}
+
+void *tb(void *Threadno)
+{
+    int valor = 9;
+    int status;
+    send_async(&valor, 1);
+    receive(&status, 4);
+
+    if (status == 0)
+    {
+        printf("TB Enviou Voto Errado.\n");
+    }
+    else
+    {
+        printf("TB Enviou Voto Certo.\n");
+    }
+    return NULL;
+}
+
+void *tc(void *Threadno)
+{
+    int valor = 10;
+    int status;
+    send_async(&valor, 2);
+    receive(&status, 5);
+
+    if (status == 0)
+    {
+        printf("TC Enviou Voto Errado.\n");
+    }
+    else
+    {
+        printf("TC Enviou Voto Certo.\n");
+    }
+    return NULL;
+}
+
+int comparacao(int voto1, int voto2, int voto3, int *versao_erro)
+{
+    if ((voto1 == voto2) && (voto2 == voto3))
+    {
+        *versao_erro = -1;
+        return voto1;
+    }
+
+    if ((voto1 != voto2) && (voto2 == voto3))
+    {
+        *versao_erro = 1;
+        return voto2;
+    }
+
+    if ((voto1 == voto3) && (voto1 != voto2))
+    {
+        *versao_erro = 2;
+        return voto1;
+    }
+
+    if ((voto1 == voto2) && (voto2 != voto3))
+    {
+        *versao_erro = 3;
+        return voto1;
+    }
+
+    return -1; // Handle other cases as needed
+}
+
+void *driver(void *Threadno)
+{
+    int votos[3];
+    int voto;
+    int versao_erro;
+    int major;
+    int errado = 0;
+    int certo = 1;
+
+    receive(&voto, 0);
+    votos[0] = voto;
+    receive(&voto, 1);
+    votos[1] = voto;
+    receive(&voto, 2);
+    votos[2] = voto;
+
+    major = comparacao(votos[0], votos[1], votos[2], &versao_erro);
+
+    for (int i = 0; i > 3; i++)
+    {
+        if (i == versao_erro - 1)
+        {
+            send_async(&errado, versao_erro + 2);
+        }
+        else
+        {
+            send_async(&certo, i + 3);
+        }
+    }
+
+    if (versao_erro != -1)
+    {
+        printf("O voto %d esta errado no valor de %d\n", versao_erro,votos[versao_erro-1]);
+        printf("O voto no valor de %d esta certo\n", major);
+    }
+    else
+    {
+        printf("Todos tiveram o mesmo voto = %d", major);
+    }
+}
+
+int main()
+{
+    pthread_t TA;
+    pthread_t TB;
+    pthread_t TC;
+    pthread_t TD;
+
+    pthread_create(&TA, NULL, ta, NULL);
+    pthread_create(&TB, NULL, tb, NULL);
+    pthread_create(&TC, NULL, tc, NULL);
+    pthread_create(&TD, NULL, driver, NULL);
+
+    pthread_join(TA, NULL);
+    pthread_join(TB, NULL);
+    pthread_join(TC, NULL);
+    pthread_join(TD, NULL);
+    return 0;
+}
