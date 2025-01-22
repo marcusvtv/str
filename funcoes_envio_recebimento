@@ -61,8 +61,8 @@ void send_sync( int *buf, int c){
 }
 
 void receive_send_sync(int *buf, int c){
-    wait(send_rec[0]);
+    wait(send_rec[c);
     *buf = canal[c];
-    signal(rec_send[0]);
+    signal(rec_send[c]);
     return;
 }
