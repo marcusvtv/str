@@ -1,0 +1,33 @@
+int canal[3] = [-1, -1, -1];
+
+
+void send_async(int *buf, intc ){
+    canal[c] = *buf;
+    return;
+}
+
+void send_sync(int *buf, int c){
+    canal[c] = *buf;
+    while(canal[c])!=-1;
+    return;
+}
+
+void receive(int *buf, int c){
+    while (canal[c]== -1);
+    *buf = canal[c];
+    canal[c] = -1;
+    return;
+}
+
+void t1(){
+    int x = 10;
+    send_sync(&x,0);
+    return
+}
+
+void t2(){
+    int y;
+    receive(&y,0);
+    printf("Valor recebido: %d", y);
+    return;
+}
