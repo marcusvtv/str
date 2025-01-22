@@ -1,3 +1,5 @@
+#Conceito de busy wait loop flag
+
 int canal[3] = [-1, -1, -1];
 
 
@@ -29,5 +31,38 @@ void t2(){
     int y;
     receive(&y,0);
     printf("Valor recebido: %d", y);
+    return;
+}
+#Término conceito busy wait loop flag
+
+
+
+#utilizando conceito de semáforo binário
+semaphore send_rec[4];
+semaphore rec_send[4];
+
+void send_async(int *buf, int c){
+    canal[c] = *buf;
+    signal(send_rec[c]);
+    return;
+}
+
+void receive_send_async(int *buf, int c){
+    wait(send_rec[c]);
+    *buf = canal[c];
+    return;
+}
+
+void send_sync( int *buf, int c){
+    canal[c] = *buf;
+    signal(send_rec[c]);
+    wait(rec_send[c]);
+    return;
+}
+
+void receive_send_sync(int *buf, int c){
+    wait(send_rec[0]);
+    *buf = canal[c];
+    signal(rec_send[0]);
     return;
 }
