@@ -1,0 +1,226 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <stddef.h>    
+#include <pthread.h>
+#include <time.h>
+#include <errno.h>
+
+int canal[8]={-1,-1,-1,-1,-1,-1,-1,-1};
+
+void send_sync(int *b, int c)
+{
+
+     canal[c] = *b;
+
+     while(canal[c] != -1){}
+
+     
+     return;
+}
+
+void receive(int *b, int c)
+{
+     while(canal[c] == -1){}
+
+     *b = canal[c];
+     canal[c] = -1;
+
+     return;
+}    
+
+// Constrói frame com dois bytes, o MSB e o LSB 
+int converte_valor(unsigned char bytex2, unsigned char bytex1){
+
+    return bytex2*256 + bytex1;
+}
+
+// Extrai os dois bytes da word passada, o MSB e o LSB  
+void encontra_bytes(int valor, unsigned char *byte2, unsigned char *byte1){
+    *byte2 = ((valor >> 8) & 255);
+    *byte1 = (valor & 255);
+    return;
+}
+
+
+int alt_wait(int q, int canais[]){
+    int i = 0;
+    while(1){
+        for(i = 0;i<q;i++){
+            if (canais[i]!=-1){
+                return i;
+            }
+        }
+    }
+}
+
+void *ta(void *threadno)
+{
+    unsigned char id=4;
+    unsigned char mens=10;
+    int valor;
+    valor = converte_valor(id, mens);
+    while(1)
+    {
+
+        send_sync(&valor,0);
+
+    }
+    return NULL;
+}
+
+void *tb(void *threadno)
+{
+    unsigned char id=5;
+    unsigned char mens=20;
+    int valor;
+    valor = converte_valor(id, mens);
+    while(1)
+    {
+        
+        send_sync(&valor,1);
+
+    }
+    return NULL;
+}
+
+
+void *tc(void *threadno)
+{
+    unsigned char id=6;
+    unsigned char mens=30;
+    int valor;
+    valor = converte_valor(id, mens);
+    while(1)
+    {
+       
+        send_sync(&valor,2);
+
+    }
+    return NULL;
+}
+
+void *td(void *threadno)
+{
+    unsigned char id=7;
+    unsigned char mens=40;
+    int valor;
+    valor = converte_valor(id, mens);
+    while(1)
+    {
+        send_sync(&valor,3);
+    }
+    return NULL;
+}
+
+void *te(void *threadno)
+{
+    int valor;
+    while(1)
+    {
+        receive(&valor, 4);
+        printf("Thread E = id: 4; Esperado: 10; Mensagem Recebida: %i\n", valor);
+        
+    }
+    return NULL;
+}
+
+void *tf(void *threadno)
+{
+
+    int valor;
+    while(1)
+    {
+        receive(&valor, 5);
+        printf("Thread F = id: 5; Esperado: 20; Mensagem Recebida: %i\n",valor);
+            
+    }
+    return NULL;
+}
+
+void *tg(void *threadno)
+{
+    int valor;
+    while(1)
+    {
+        receive(&valor, 6);
+        printf("Thread G = id: 6;  Esperado: 30; Mensagem Recebida: %i\n", valor);
+        
+    }
+    return NULL;
+}
+
+void *th(void *threadno)
+{
+
+    int valor;
+    while(1)
+    {
+        receive(&valor, 7);
+        printf("Thread H = id: 7;  Esperado: 40; Mensagem Recebida: %i\n", valor);
+        
+    }
+    return NULL;
+}
+
+void *tmailbox(void *threadno)
+{
+    int aux;
+    int i;
+    int buff[12]={-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1}; //buffer de 12 posições para 
+    unsigned char id;
+    unsigned char mensagem; 
+    int mensagem2; //variavel a ser transmitida; para pegar o cast de mensagem como inteiro, 
+    int f;
+    while(1){
+       for( i=0;i<12;i++){
+          aux=alt_wait(4,canal);
+          receive(&buff[i],aux);
+       }
+       for(i=0;i<12;i++){
+         encontra_bytes(buff[i],&id,&mensagem);
+         mensagem2=(int)mensagem;
+         send_sync(&mensagem2,id);
+         
+       }
+       printf("################################\n");
+       
+    }
+    
+  return NULL;
+
+}
+
+
+int main()
+{
+    pthread_t TA;
+    pthread_t TB;
+    pthread_t TC;
+    pthread_t TD;
+    pthread_t TE;
+    pthread_t TF;
+    pthread_t TG;
+    pthread_t TH;
+    pthread_t TMAIL;
+
+    pthread_create(&TA, NULL, ta, NULL);
+    pthread_create(&TB, NULL, tb, NULL);
+    pthread_create(&TC, NULL, tc, NULL);
+    pthread_create(&TD, NULL, td, NULL);
+    pthread_create(&TE, NULL, te, NULL);
+    pthread_create(&TF, NULL, tf, NULL);
+    pthread_create(&TG, NULL, tg, NULL);
+    pthread_create(&TH, NULL, th, NULL);
+    pthread_create(&TMAIL, NULL, tmailbox, NULL);
+
+    pthread_join(TA, NULL);
+    pthread_join(TB, NULL);
+    pthread_join(TC, NULL);
+    pthread_join(TD, NULL);
+    pthread_join(TE, NULL);
+    pthread_join(TF, NULL);
+    pthread_join(TG, NULL);
+    pthread_join(TH, NULL);
+    pthread_join(TMAIL, NULL);
+    return 0;
+}
