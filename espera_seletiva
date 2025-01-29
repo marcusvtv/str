@@ -1,0 +1,47 @@
+int alt_wait (int q, int chan[]){
+    int i;
+    while(1){
+        for (i=0; i<q; i++){
+            if(chan[i]!=-1){
+                return i;
+            }
+        }
+    }
+}
+
+int canal[4] = {-1,-1,-1,-1}
+
+void t5_modificado(){
+    int buffer[4];
+    int i; int can;
+    for (i=0;i<4;i++){
+        can = alt_wait(4,cannal);
+        receive(&buffer[i], can);
+    }
+}
+
+void t1(){
+    delay(10);
+    send(&x,0)
+}
+
+void t2(){
+    delay(5);
+    send(&x,1)
+}
+
+void t3(){
+    delay(15);
+    send(&x,2)
+}
+
+void t4(){
+    send(&x,3)
+}
+
+void t5(){
+    receive(&x,0)
+    receive(&x,1)
+    receive(&x,2)
+    receive(&x,3) // nesse caso a mensagem de t4 foi disponibilizada imediatamente, teria que esperar o maior delay
+}
