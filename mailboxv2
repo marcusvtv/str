@@ -18,7 +18,7 @@ void send_sync(int *b, int c)
      return;
 }
 
-void receive(int *b, int c)
+void receive(int *b, int c, double)
 {
      while(canal[c] == -1){}
 
@@ -26,7 +26,46 @@ void receive(int *b, int c)
      canal[c] = -1;
 
      return;
-}    
+}
+
+
+#include<time.h>
+int send_sync_timed(int *b, int c, double tempo)
+{
+     time_t inicio, fim;
+     canal[c] = *b;
+     inicio = time(null);
+     do{
+          fim = time(null);
+     }while(
+          (canal[c] != -1) && (difftime(fim, inicio) <= tempo)
+     )
+     if (canal[c] == -1) #testa novamente pra saber se saiu do laço pela mensagem lida
+          return 0;
+     else 
+          return 1;
+}
+
+
+
+int receive_timed(int *b, int c, double tempo)
+{     
+     time_t inicio, fim;
+     inicio = time(null);
+     do{
+          fim = time(null);
+     }while(
+          (canal[c] == -1)&&(difftime(fim, inicio) < tempo)
+     )
+     if (canal[c]!= -1){
+          *b = canal[c];
+          canal[c] = -1;
+          return 0;
+     }
+     else
+          return 1;
+}
+
 
 // Constrói frame com dois bytes, o MSB e o LSB 
 int converte_valor(unsigned char bytex2, unsigned char bytex1){
